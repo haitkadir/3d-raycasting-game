@@ -3,9 +3,10 @@ function castAllRays(){
     let rayAngle = (player.rotationAngle - (FOV_ANGLE / 2));
 
     rays = [];
-    // for(let i = 0; i < NUM_RAYS; i++){
-    for(let i = 0; i < 1; i++){
+    for(let i = 0; i < NUM_RAYS; i++){
+    // for(let i = 0; i < 1; i++){
         let ray = new Ray(rayAngle);
+        ray.cast(columnId);
         rays.push(ray);
         rayAngle += (FOV_ANGLE / NUM_RAYS);
         columnId++;
