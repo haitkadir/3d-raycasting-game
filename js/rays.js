@@ -4,7 +4,6 @@ function castAllRays(){
 
     rays = [];
     for(let i = 0; i < NUM_RAYS; i++){
-    // for(let i = 0; i < 1; i++){
         let ray = new Ray(rayAngle);
         ray.cast(columnId);
         rays.push(ray);

@@ -70,13 +70,13 @@ class Player{
         noStroke();
         fill('red');
         circle(this.x, this.y, this.redius);
-        stroke('red');
-        line(
-            this.x,
-            this.y,
-            this.x + (Math.cos(this.rotationAngle) * 60),
-            this.y + (Math.sin(this.rotationAngle) * 60)
-            );
+        // stroke('red');
+        // line(
+        //     this.x,
+        //     this.y,
+        //     this.x + (Math.cos(this.rotationAngle) * 60),
+        //     this.y + (Math.sin(this.rotationAngle) * 60)
+        //     );
         }
     }
 
@@ -89,48 +89,115 @@ class Ray{
         this.distance = 0;
 
         this.isRayFacingDown = this.rayAngle > 0 && this.rayAngle < Math.PI;
-        this.isRayFicingUp = !this.isRayFacingDown;
-        this.isRayFicingRight = this.rayAngle < 0.5 *Math.PI || this.rayAngle > 1.5 * Math.PI;
-        this.isRayFicingLeft = !this.isRayFicingRight;
+        this.isRayFacingUp = !this.isRayFacingDown;
+        this.isRayFacingRight = this.rayAngle < 0.5 *Math.PI || this.rayAngle > 1.5 * Math.PI;
+        this.isRayFacingLeft = !this.isRayFacingRight;
     }
 
     cast(columnId){
+        //global
         let xintercept, yintercept;
         let xstep, ystep;
 
-        // Horizontal ray-grind intersection
+//----------------------Horizontal ray-grind intersection-----------------------
+
+        let foundHorizWallHit = false;
+        let wallHorizHitX = 0;
+        let wallHorizHitY = 0;
+
         yintercept = Math.floor(player.y / TILE_SIZE) * TILE_SIZE;
         yintercept += this.isRayFacingDown ? TILE_SIZE : 0;
-        xintercept = ((player.y - yintercept) / tan(this.rayAngle))
+        //find the x_cordinate of closest h-intersection
+        xintercept = player.x + (yintercept - player.y) / tan(this.rayAngle)
         // xstep and ystep mains how much I will inceriment to get next intersection points
         ystep = TILE_SIZE;
-        ystep *= this.isRayFicingUp ? -1 : 1;
+        ystep *= this.isRayFacingUp ? -1 : 1;
         xstep = TILE_SIZE / Math.tan(this.rayAngle);
-        xstep  *= (this.isRayFicingLeft && xstep > 0) ? -1 : 1;
-        xstep  *= (this.isRayFicingRight && xstep < 0) ? -1 : 1;
+        xstep  *= (this.isRayFacingLeft && xstep > 0) ? -1 : 1;
+        xstep  *= (this.isRayFacingRight && xstep < 0) ? -1 : 1;
+        // increment xstep ystep until we find a wall
+        let nextHorizTouchX = xintercept;
+        let nextHorizTouchY = yintercept
+        if (this.isRayFacingUp)
+            nextHorizTouchY--;
+        while (true){
+            if (grid.hasWallAt(nextHorizTouchX, nextHorizTouchY)){
+                foundHorizWallHit = true;
+                wallHorizHitX = Math.floor(nextHorizTouchX);
+                wallHorizHitY = Math.floor(nextHorizTouchY);
+                stroke('rgba(255, 0, 0, 0.2)');
+                // line(player.x, player.y, wallHorizHitX, wallHorizHitY);
+                break;
+            } else {
+                nextHorizTouchX += xstep;
+                nextHorizTouchY += ystep;
+            }
+        }
+
+//------------------------Vertical ray-grind intersection-----------------------
+
+        let foundVertWallHit = false;
+        let wallVertHitX = 0;
+        let wallVertHitY = 0;
+
+        xintercept = Math.floor(player.x / TILE_SIZE) * TILE_SIZE;
+        xintercept += this.isRayFacingRight ? TILE_SIZE : 0;
+        //find the y_cordinate of closest h-intersection
+        yintercept = player.y + (xintercept - player.x) * tan(this.rayAngle)
+        // xstep and ystep mains how much I will inceriment to get next intersection points
+        xstep = TILE_SIZE;
+        xstep *= this.isRayFacingLeft ? -1 : 1;
+
+        ystep = TILE_SIZE * Math.tan(this.rayAngle);
+        ystep  *= (this.isRayFacingUp && ystep > 0) ? -1 : 1;
+        ystep  *= (this.isRayFacingDown && ystep < 0) ? -1 : 1;
+        // increment xstep ystep until we find a wall
+        let nextVertTouchX = xintercept;
+        let nextVertTouchY = yintercept
+        if (this.isRayFacingLeft)
+            nextVertTouchX--;
+        while (true){
+            if (grid.hasWallAt(nextVertTouchX, nextVertTouchY)){
+                foundVertWallHit = true;
+                wallVertHitX = Math.floor(nextVertTouchX);
+                wallVertHitY = Math.floor(nextVertTouchY);
+                break;
+            } else {
+                nextVertTouchX += xstep;
+                nextVertTouchY += ystep;
+            }
+        }
+
+//-------------Calculate the distances of H & V and get short one---------------
+
+        let horizHitDistance = (foundHorizWallHit) 
+            ? distanceBitweenPoints(player.x, player.y, wallHorizHitX, wallHorizHitY) 
+            : Number.MAX_VALUE;
+        let vertHitDistance = (foundVertWallHit) 
+            ? distanceBitweenPoints(player.x, player.y, wallVertHitX, wallVertHitY) 
+            : Number.MAX_VALUE;
+        if (horizHitDistance < vertHitDistance){
+            this.wallHitX = wallHorizHitX;
+            this.wallHitY = wallHorizHitY;
+            this.distance = horizHitDistance;
+        }else {
+            this.wallHitX = wallVertHitX;
+            this.wallHitY = wallVertHitY;
+            this.distance = vertHitDistance;
+        }
     }
 
     render(){
-        let Hy = (Math.floor(player.y / TILE_SIZE) * TILE_SIZE);
-        let HOpp = (player.y - Hy);
-        let Hx = player.x + (HOpp / Math.tan(this.rayAngle));
 
-        let Vx = (Math.floor(player.x / TILE_SIZE) * TILE_SIZE);
-        let VAdj = (player.x - Vx);
-        let Vy = player.y + (Math.tan(this.rayAngle) * VAdj);
 
-        stroke('rgba(255, 0, 0, 0.5)');
+        stroke('rgba(255, 0, 0, 0.2)');
         line(
             player.x,
             player.y,
-            player.x + (Math.cos(this.rayAngle) * 40),
-            player.y + (Math.sin(this.rayAngle) * 40),
+            this.wallHitX,
+            this.wallHitY
         );
-        noStroke();
-        fill('blue');
-        circle(Hx, Hy, 10);
-        fill('green');
-        circle(Vx, Vy, 10);
+
     }
 }
 let grid = new Map();

@@ -5,4 +5,5 @@ function draw() {
         ray.render();
     }
     player.render();
+    // castAllRays();
 }
